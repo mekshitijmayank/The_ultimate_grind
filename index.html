@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Ultimate Grind</title>
+<meta name="theme-color" content="#0B0F14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="The Ultimate Grind">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#0B0F14; --panel2:#12181F; --border:#1F2733;
+    --text:#C6D0DA; --muted:#5C6773; --dim:#333D49;
+    --mint:#5EE3B0; --coral:#FF6B6B; --teal:#4ECDC4; --amber:#FFB86B; --violet:#9D8CFF; --blue:#82AAFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--bg); margin:0;}
+  body{
+    font-family:'DejaVu Sans Mono','SF Mono',Menlo,Consolas,monospace;
+    color:var(--text); padding:28px 20px 60px; min-height:100vh;
+  }
+  #app{ max-width:640px; margin:0 auto; }
+  .hero{ text-align:center; margin-bottom:22px; }
+  .hero h1{
+    font-size:26px; letter-spacing:2px; margin:0; color:var(--text);
+    text-transform:uppercase;
+  }
+  .hero h1 .accent{ color:var(--coral); }
+  .hero .tagline{ color:var(--amber); font-size:13px; letter-spacing:3px; margin-top:6px; font-style:italic; }
+  .panel{ background:var(--panel2); border:1px solid var(--border); border-radius:20px; padding:20px; margin-bottom:18px; }
+  .tabbar{ display:flex; align-items:center; gap:8px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .dot{ width:10px; height:10px; border-radius:50%; background:var(--dim); }
+  .fname{ color:var(--muted); font-size:14px; margin-left:6px; }
+  .dateRow{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .dateNav{ background:none; border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 14px; cursor:pointer; font-family:inherit; font-size:14px; }
+  .dateNav:hover{ border-color:var(--teal); }
+  .dateLabel{ font-size:14px; color:var(--amber); }
+  .item{ display:flex; align-items:center; gap:12px; padding:12px 10px; border-radius:10px; cursor:pointer; user-select:none; transition:background .15s; }
+  .item:hover{ background:#161D26; }
+  .check{ width:24px; height:24px; border-radius:6px; border:2px solid var(--dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; font-weight:bold; }
+  .label{ flex:1; font-size:15px; }
+  .tag{ font-size:11px; padding:3px 8px; border-radius:6px; font-weight:bold; }
+  .streakRow{ display:flex; gap:12px; margin-bottom:18px; }
+  .streakBox{ flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:16px; padding:16px; text-align:center; }
+  .streakNum{ font-size:32px; font-weight:bold; color:var(--mint); }
+  .streakLbl{ font-size:11px; color:var(--muted); letter-spacing:2px; margin-top:4px; }
+  .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-top:10px; }
+  .cell{ aspect-ratio:1; border-radius:5px; background:var(--dim); }
+  .sectionTitle{ font-size:12px; color:var(--muted); letter-spacing:2px; margin-bottom:10px; }
+  .notes{ width:100%; background:#0B0F14; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:10px; font-family:inherit; font-size:13px; resize:vertical; min-height:60px; }
+  .cmd{ font-size:13px; color:var(--teal); margin-top:16px; text-align:center;}
+  .cmd .comment{ color:var(--muted); }
+  .statRow{ display:flex; gap:10px; flex-wrap:wrap; }
+  .statBox{ flex:1; min-width:120px; background:#0B0F14; border:1px solid var(--border); border-radius:12px; padding:12px; text-align:center; }
+  .statNum{ font-size:22px; font-weight:bold; }
+  .statLbl{ font-size:10px; color:var(--muted); letter-spacing:1px; margin-top:4px; }
+  .btnRow{ display:flex; gap:10px; margin-top:14px; }
+  .btn{ flex:1; background:#0B0F14; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:10px; font-family:inherit; font-size:13px; cursor:pointer; }
+  .btn:hover{ border-color:var(--teal); color:var(--teal); }
+  .btn.primary{ border-color:var(--mint); color:var(--mint); }
+  .btn.primary:hover{ background:var(--mint); color:#0B0F14; }
+  #fileInput{ display:none; }
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--panel2); border:1px solid var(--mint); color:var(--mint);
+    padding:10px 18px; border-radius:10px; font-size:13px; opacity:0; transition:opacity .3s;
+    pointer-events:none; z-index:999;
+  }
+  .toast.show{ opacity:1; }
+
+  input[type=text], textarea.small{
+    width:100%; background:#0B0F14; border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:10px; font-family:inherit; font-size:13px; margin-bottom:8px;
+  }
+  select{
+    background:#0B0F14; border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:9px; font-family:inherit; font-size:13px;
+  }
+  .row{ display:flex; gap:8px; }
+  .row > *{ flex:1; }
+  .entryList{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+  .entryCard{ background:#0B0F14; border:1px solid var(--border); border-radius:10px; padding:10px 12px; position:relative; }
+  .entryCard .del{ position:absolute; top:8px; right:10px; background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; }
+  .entryCard .del:hover{ color:var(--coral); }
+  .entryTag{ font-size:10px; padding:2px 7px; border-radius:5px; font-weight:bold; display:inline-block; margin-bottom:6px; }
+  .entryText{ font-size:14px; color:var(--text); }
+  .entryMeaning{ font-size:12px; color:var(--muted); margin-top:3px; }
+  .entryDate{ font-size:10px; color:var(--dim); margin-top:4px; }
+  .novelName{ font-size:16px; color:var(--amber); margin-bottom:12px; }
+
+  #reportCard{ position:absolute; left:-99999px; top:0; width:1080px; background:#0B0F14; padding:60px; font-family:'DejaVu Sans Mono',monospace; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="hero">
+    <h1>The <span class="accent">Ultimate</span> Grind</h1>
+    <div class="tagline">Now or never...</div>
+  </div>
+
+  <div class="streakRow">
+    <div class="streakBox"><div class="streakNum" id="streakNum">0</div><div class="streakLbl">DAY STREAK</div></div>
+    <div class="streakBox"><div class="streakNum" id="todayNum" style="color:#4ECDC4">0/7</div><div class="streakLbl">TODAY</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="tabbar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="fname">daily_log.js</span></div>
+    <div class="dateRow">
+      <button class="dateNav" id="prevDay">&lt;</button>
+      <span class="dateLabel" id="dateLabel">TODAY</span>
+      <button class="dateNav" id="nextDay">&gt;</button>
+    </div>
+    <div id="itemList"></div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionTitle">QUOTE OF THE DAY</div>
+    <input type="text" id="quoteText" placeholder="the quote...">
+    <input type="text" id="quoteMeaning" placeholder="what it means to you...">
+    <button class="btn primary" id="saveQuoteBtn">save quote</button>
+  </div>
+
+  <div class="panel">
+    <div class="sectionTitle">CURRENTLY READING</div>
+    <input type="text" id="novelInput" placeholder="name of the novel...">
+    <button class="btn" id="saveNovelBtn" style="margin-bottom:14px;">save</button>
+
+    <div class="sectionTitle">ADD A POINT / TAKEAWAY</div>
+    <input type="text" id="pointInput" placeholder="an important point from the book...">
+    <button class="btn" id="addPointBtn">add point</button>
+    <div class="entryList" id="pointList"></div>
+
+    <div class="sectionTitle" style="margin-top:16px;">ADD WORD / PHRASE / SENTENCE</div>
+    <div class="row">
+      <select id="vocabType">
+        <option value="word">word</option>
+        <option value="phrase">phrase</option>
+        <option value="sentence">sentence</option>
+      </select>
+    </div>
+    <input type="text" id="vocabText" placeholder="the word / phrase / sentence...">
+    <input type="text" id="vocabMeaning" placeholder="meaning...">
+    <button class="btn" id="addVocabBtn">add</button>
+    <div class="entryList" id="vocabList"></div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionTitle">THIS WEEK (LAST 7 DAYS)</div>
+    <div class="statRow" id="weekStats"></div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionTitle">LAST 28 DAYS</div>
+    <div class="grid" id="historyGrid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionTitle" id="notesTitle">NOTES</div>
+    <textarea class="notes" id="notesBox" placeholder="what problem did you solve? what did you build? what blocked you?"></textarea>
+  </div>
+
+  <div class="panel">
+    <div class="sectionTitle">DAILY REPORT</div>
+    <button class="btn primary" id="reportBtn" style="width:100%;">↓ generate today's report (JPG)</button>
+  </div>
+
+  <div class="panel">
+    <div class="sectionTitle">BACKUP</div>
+    <div class="btnRow">
+      <button class="btn" id="exportBtn">↓ export data</button>
+      <button class="btn" id="importBtn">↑ import data</button>
+    </div>
+    <input type="file" id="fileInput" accept="application/json">
+  </div>
+
+  <div class="cmd">$ status <span class="comment">// no fake projects. no cheating. just reps.</span></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- offscreen report card, filled + rasterized on demand -->
+<div id="reportCard"></div>
+
+<script>
+(function(){
+  const ITEMS = [
+    { key: "dsa1", label: "DSA — new problem (morning)", color: "#FF6B6B", tag: "DSA" },
+    { key: "revise", label: "Revision (college gap)", color: "#FFB86B", tag: "REV" },
+    { key: "dev1", label: "Development (evening)", color: "#4ECDC4", tag: "DEV" },
+    { key: "dsa2", label: "DSA — new problem (night)", color: "#FF6B6B", tag: "DSA" },
+    { key: "dev2", label: "Development (late night)", color: "#4ECDC4", tag: "DEV" },
+    { key: "commit", label: "GitHub commit pushed", color: "#82AAFF", tag: "GIT" },
+    { key: "sleep6", label: "Got 5–6 hrs sleep", color: "#9D8CFF", tag: "REST" },
+  ];
+  const PREFIX = "grindjs_";
+  const VOCAB_COLORS = { word: "#FF6B6B", phrase: "#4ECDC4", sentence: "#9D8CFF" };
+
+  let currentDate = new Date();
+  let historyCache = {};
+  let notesDebounce = null;
+
+  // ---------- storage helpers ----------
+  function getRaw(key){
+    try { const v = localStorage.getItem(PREFIX + key); return v ? JSON.parse(v) : null; }
+    catch(e){ return null; }
+  }
+  function setRaw(key, value){
+    try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); }
+    catch(e){ console.error('save failed', e); }
+  }
+  function fmtKey(d){ return d.toISOString().slice(0,10); }
+  function fmtLabel(d){
+    const today = fmtKey(new Date());
+    const k = fmtKey(d);
+    return (k === today ? "TODAY · " : "") + d.toDateString();
+  }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- daily log ----------
+  function loadDay(key){ return getRaw('log_' + key) || {}; }
+  function saveDay(key, entry){ setRaw('log_' + key, entry); }
+  function completion(entry){
+    if(!entry) return 0;
+    return ITEMS.filter(i => entry[i.key]).length / ITEMS.length;
+  }
+  function loadHistory(){
+    const days = [];
+    const today = new Date();
+    for(let i=27;i>=0;i--){
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      days.push(fmtKey(d));
+    }
+    const entries = {};
+    days.forEach(k => { entries[k] = loadDay(k); });
+    historyCache = entries;
+  }
+  function computeStreak(){
+    const today = new Date();
+    let streak = 0;
+    for(let i=0;i<28;i++){
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const entry = historyCache[fmtKey(d)];
+      const done = entry ? ITEMS.filter(it => entry[it.key]).length : 0;
+      if(done >= 5){ streak++; }
+      else { if(i === 0) continue; break; }
+    }
+    return streak;
+  }
+
+  function renderGrid(){
+    const grid = document.getElementById('historyGrid');
+    grid.innerHTML = '';
+    Object.keys(historyCache).sort().forEach(k => {
+      const c = completion(historyCache[k]);
+      let bg = '#333D49';
+      if(c >= 0.85) bg = '#5EE3B0';
+      else if(c >= 0.6) bg = '#4ECDC4';
+      else if(c > 0) bg = '#FFB86B';
+      const cell = document.createElement('div');
+      cell.className = 'cell'; cell.title = k; cell.style.background = bg;
+      grid.appendChild(cell);
+    });
+  }
+
+  function renderWeekStats(){
+    const today = new Date();
+    let dsaCount=0, devCount=0, sleepCount=0, commitCount=0, totalPct=0, daysCounted=0;
+    for(let i=0;i<7;i++){
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const entry = historyCache[fmtKey(d)] || {};
+      if(entry.dsa1) dsaCount++;
+      if(entry.dsa2) dsaCount++;
+      if(entry.dev1) devCount++;
+      if(entry.dev2) devCount++;
+      if(entry.sleep6) sleepCount++;
+      if(entry.commit) commitCount++;
+      totalPct += completion(entry);
+      daysCounted++;
+    }
+    const avgPct = Math.round((totalPct / daysCounted) * 100);
+    const stats = [
+      { num: dsaCount + '/14', lbl: 'DSA SESSIONS', color: '#FF6B6B' },
+      { num: devCount + '/14', lbl: 'DEV SESSIONS', color: '#4ECDC4' },
+      { num: sleepCount + '/7', lbl: 'GOOD SLEEP', color: '#9D8CFF' },
+      { num: commitCount + '/7', lbl: 'COMMITS', color: '#82AAFF' },
+      { num: avgPct + '%', lbl: 'AVG COMPLETION', color: '#5EE3B0' },
+    ];
+    const wrap = document.getElementById('weekStats');
+    wrap.innerHTML = '';
+    stats.forEach(s => {
+      const box = document.createElement('div');
+      box.className = 'statBox';
+      box.innerHTML = `<div class="statNum" style="color:${s.color}">${s.num}</div><div class="statLbl">${s.lbl}</div>`;
+      wrap.appendChild(box);
+    });
+  }
+
+  function renderDay(){
+    const key = fmtKey(currentDate);
+    document.getElementById('dateLabel').textContent = fmtLabel(currentDate);
+    document.getElementById('notesTitle').textContent = 'NOTES — ' + key;
+    const entry = loadDay(key);
+
+    const list = document.getElementById('itemList');
+    list.innerHTML = '';
+    ITEMS.forEach(item => {
+      const on = !!entry[item.key];
+      const row = document.createElement('div');
+      row.className = 'item';
+      row.innerHTML = `
+        <div class="check" style="background:${on ? item.color : 'transparent'}; border-color:${on ? item.color : '#333D49'}; color:${on ? '#0B0F14' : 'transparent'}">${on ? '✓' : ''}</div>
+        <span class="label" style="color:${on ? '#C6D0DA' : '#5C6773'}">${item.label}</span>
+        <span class="tag" style="color:${item.color}; border:1px solid ${item.color}">${item.tag}</span>
+      `;
+      row.addEventListener('click', () => {
+        const fresh = loadDay(key);
+        fresh[item.key] = !fresh[item.key];
+        saveDay(key, fresh);
+        refreshAll();
+      });
+      list.appendChild(row);
+    });
+
+    document.getElementById('notesBox').value = entry.notes || '';
+    const todayDone = ITEMS.filter(i => entry[i.key]).length;
+    document.getElementById('todayNum').textContent = todayDone + '/' + ITEMS.length;
+
+    // quote of the day for this date
+    const q = getRaw('quote_' + key) || {};
+    document.getElementById('quoteText').value = q.quote || '';
+    document.getElementById('quoteMeaning').value = q.meaning || '';
+  }
+
+  // ---------- reading tracker ----------
+  function loadNovel(){ return getRaw('novel') || ''; }
+  function loadPoints(){ return getRaw('reading_points') || []; }
+  function loadVocab(){ return getRaw('reading_vocab') || []; }
+
+  function renderReading(){
+    document.getElementById('novelInput').value = loadNovel();
+
+    const points = loadPoints();
+    const pointList = document.getElementById('pointList');
+    pointList.innerHTML = '';
+    points.slice().reverse().forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'entryCard';
+      card.innerHTML = `
+        <button class="del" data-id="${p.id}" data-kind="point">✕</button>
+        <div class="entryText">${escapeHtml(p.text)}</div>
+        <div class="entryDate">${p.date}</div>
+      `;
+      pointList.appendChild(card);
+    });
+
+    const vocab = loadVocab();
+    const vocabList = document.getElementById('vocabList');
+    vocabList.innerHTML = '';
+    vocab.slice().reverse().forEach(v => {
+      const color = VOCAB_COLORS[v.type] || '#82AAFF';
+      const card = document.createElement('div');
+      card.className = 'entryCard';
+      card.innerHTML = `
+        <button class="del" data-id="${v.id}" data-kind="vocab">✕</button>
+        <span class="entryTag" style="color:${color}; border:1px solid ${color}">${v.type}</span>
+        <div class="entryText">${escapeHtml(v.text)}</div>
+        <div class="entryMeaning">${escapeHtml(v.meaning || '')}</div>
+        <div class="entryDate">${v.date}</div>
+      `;
+      vocabList.appendChild(card);
+    });
+
+    document.querySelectorAll('.del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const kind = btn.getAttribute('data-kind');
+        if(kind === 'point'){
+          setRaw('reading_points', loadPoints().filter(p => p.id !== id));
+        } else {
+          setRaw('reading_vocab', loadVocab().filter(v => v.id !== id));
+        }
+        renderReading();
+      });
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  document.getElementById('saveNovelBtn').addEventListener('click', () => {
+    setRaw('novel', document.getElementById('novelInput').value.trim());
+    showToast('novel saved');
+  });
+
+  document.getElementById('addPointBtn').addEventListener('click', () => {
+    const input = document.getElementById('pointInput');
+    const text = input.value.trim();
+    if(!text) return;
+    const points = loadPoints();
+    points.push({ id: uid(), text, date: fmtKey(new Date()) });
+    setRaw('reading_points', points);
+    input.value = '';
+    renderReading();
+  });
+
+  document.getElementById('addVocabBtn').addEventListener('click', () => {
+    const type = document.getElementById('vocabType').value;
+    const textEl = document.getElementById('vocabText');
+    const meaningEl = document.getElementById('vocabMeaning');
+    const text = textEl.value.trim();
+    const meaning = meaningEl.value.trim();
+    if(!text) return;
+    const vocab = loadVocab();
+    vocab.push({ id: uid(), type, text, meaning, date: fmtKey(new Date()) });
+    setRaw('reading_vocab', vocab);
+    textEl.value = ''; meaningEl.value = '';
+    renderReading();
+  });
+
+  // ---------- quote of the day ----------
+  document.getElementById('saveQuoteBtn').addEventListener('click', () => {
+    const key = fmtKey(currentDate);
+    const quote = document.getElementById('quoteText').value.trim();
+    const meaning = document.getElementById('quoteMeaning').value.trim();
+    setRaw('quote_' + key, { quote, meaning });
+    showToast('quote saved');
+  });
+
+  // ---------- nav / notes ----------
+  document.getElementById('prevDay').addEventListener('click', () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    renderDay();
+  });
+  document.getElementById('nextDay').addEventListener('click', () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    renderDay();
+  });
+  document.getElementById('notesBox').addEventListener('input', (e) => {
+    const val = e.target.value;
+    clearTimeout(notesDebounce);
+    notesDebounce = setTimeout(() => {
+      const key = fmtKey(currentDate);
+      const fresh = loadDay(key);
+      fresh.notes = val;
+      saveDay(key, fresh);
+    }, 500);
+  });
+
+  function refreshAll(){
+    loadHistory();
+    document.getElementById('streakNum').textContent = computeStreak();
+    renderGrid();
+    renderWeekStats();
+    renderDay();
+    renderReading();
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ---------- backup ----------
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const all = {};
+    Object.keys(localStorage).forEach(k => {
+      if(k.startsWith(PREFIX)){
+        all[k.replace(PREFIX, '')] = JSON.parse(localStorage.getItem(k));
+      }
+    });
+    const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ultimate-grind-backup-' + fmtKey(new Date()) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('backup downloaded');
+  });
+  document.getElementById('importBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+  document.getElementById('fileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        Object.keys(data).forEach(k => localStorage.setItem(PREFIX + k, JSON.stringify(data[k])));
+        refreshAll();
+        showToast('backup restored');
+      } catch(err){ showToast('invalid file'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // ---------- daily report (JPG) ----------
+  document.getElementById('reportBtn').addEventListener('click', () => {
+    const key = fmtKey(new Date());
+    const entry = loadDay(key);
+    const quote = getRaw('quote_' + key) || {};
+    const novel = loadNovel();
+    const todaysPoints = loadPoints().filter(p => p.date === key);
+    const todaysVocab = loadVocab().filter(v => v.date === key);
+    const streak = computeStreak();
+    const dateStr = new Date().toDateString();
+
+    const doneItems = ITEMS.filter(i => entry[i.key]);
+    const notDoneItems = ITEMS.filter(i => !entry[i.key]);
+
+    let html = `
+      <div style="font-family:'DejaVu Sans Mono',monospace; color:#C6D0DA;">
+        <div style="text-align:center; margin-bottom:36px;">
+          <div style="font-size:40px; font-weight:bold; letter-spacing:2px; text-transform:uppercase;">THE <span style="color:#FF6B6B;">ULTIMATE</span> GRIND</div>
+          <div style="font-size:18px; color:#FFB86B; letter-spacing:4px; margin-top:8px; font-style:italic;">Now or never...</div>
+          <div style="font-size:15px; color:#5C6773; margin-top:14px;">${dateStr}</div>
+        </div>
+
+        <div style="display:flex; gap:16px; margin-bottom:32px;">
+          <div style="flex:1; background:#12181F; border:1px solid #1F2733; border-radius:16px; padding:20px; text-align:center;">
+            <div style="font-size:40px; font-weight:bold; color:#5EE3B0;">${streak}</div>
+            <div style="font-size:11px; color:#5C6773; letter-spacing:2px; margin-top:4px;">DAY STREAK</div>
+          </div>
+          <div style="flex:1; background:#12181F; border:1px solid #1F2733; border-radius:16px; padding:20px; text-align:center;">
+            <div style="font-size:40px; font-weight:bold; color:#4ECDC4;">${doneItems.length}/${ITEMS.length}</div>
+            <div style="font-size:11px; color:#5C6773; letter-spacing:2px; margin-top:4px;">TODAY'S SCORE</div>
+          </div>
+        </div>
+
+        <div style="background:#12181F; border:1px solid #1F2733; border-radius:16px; padding:24px; margin-bottom:24px;">
+          <div style="font-size:12px; color:#5C6773; letter-spacing:2px; margin-bottom:14px;">TODAY'S LOG</div>
+          ${ITEMS.map(i => `
+            <div style="display:flex; align-items:center; gap:12px; padding:8px 0;">
+              <div style="width:20px; height:20px; border-radius:5px; background:${entry[i.key] ? i.color : 'transparent'}; border:2px solid ${entry[i.key] ? i.color : '#333D49'}; display:flex; align-items:center; justify-content:center; color:#0B0F14; font-size:13px; font-weight:bold;">${entry[i.key] ? '✓' : ''}</div>
+              <div style="font-size:16px; color:${entry[i.key] ? '#C6D0DA' : '#5C6773'};">${i.label}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        ${(quote.quote) ? `
+        <div style="background:#12181F; border:1px solid #1F2733; border-left:4px solid #FFB86B; border-radius:16px; padding:22px; margin-bottom:24px;">
+          <div style="font-size:12px; color:#5C6773; letter-spacing:2px; margin-bottom:10px;">QUOTE OF THE DAY</div>
+          <div style="font-size:18px; color:#FFB86B; font-style:italic;">"${escapeHtml(quote.quote)}"</div>
+          ${quote.meaning ? `<div style="font-size:14px; color:#8B98A8; margin-top:8px;">— ${escapeHtml(quote.meaning)}</div>` : ''}
+        </div>` : ''}
+
+        ${(novel && (todaysPoints.length || todaysVocab.length)) ? `
+        <div style="background:#12181F; border:1px solid #1F2733; border-radius:16px; padding:22px; margin-bottom:24px;">
+          <div style="font-size:12px; color:#5C6773; letter-spacing:2px; margin-bottom:10px;">READING — ${escapeHtml(novel)}</div>
+          ${todaysPoints.map(p => `<div style="font-size:14px; color:#C6D0DA; margin-bottom:6px;">• ${escapeHtml(p.text)}</div>`).join('')}
+          ${todaysVocab.map(v => `<div style="font-size:14px; margin-bottom:6px;"><span style="color:${VOCAB_COLORS[v.type]}; font-weight:bold;">[${v.type}]</span> <span style="color:#C6D0DA;">${escapeHtml(v.text)}</span>${v.meaning ? ` <span style="color:#5C6773;">— ${escapeHtml(v.meaning)}</span>` : ''}</div>`).join('')}
+        </div>` : ''}
+
+        ${entry.notes ? `
+        <div style="background:#12181F; border:1px solid #1F2733; border-radius:16px; padding:22px; margin-bottom:24px;">
+          <div style="font-size:12px; color:#5C6773; letter-spacing:2px; margin-bottom:10px;">NOTES</div>
+          <div style="font-size:14px; color:#C6D0DA; white-space:pre-wrap;">${escapeHtml(entry.notes)}</div>
+        </div>` : ''}
+
+        <div style="text-align:center; font-size:13px; color:#4ECDC4; margin-top:10px;">
+          $ status <span style="color:#5C6773;">// no fake projects. no cheating. just reps.</span>
+        </div>
+      </div>
+    `;
+
+    const card = document.getElementById('reportCard');
+    card.innerHTML = html;
+
+    html2canvas(card, { backgroundColor: '#0B0F14', scale: 2 }).then(canvas => {
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ultimate-grind-report-' + key + '.jpg';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('report downloaded');
+      }, 'image/jpeg', 0.95);
+    }).catch(() => showToast('report generation failed'));
+  });
+
+  refreshAll();
+})();
+</script>
+</body>
+</html>
